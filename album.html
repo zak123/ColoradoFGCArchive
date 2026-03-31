@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Album – Colorado FGC Archive</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a1a;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+    }
+
+    header .logo span { color: #ff6b35; }
+
+    .breadcrumb {
+      font-size: 13px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .breadcrumb a {
+      color: #888;
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover { color: #fff; }
+
+    .breadcrumb .sep { color: #444; }
+
+    main {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 32px 24px 60px;
+    }
+
+    .album-header {
+      margin-bottom: 28px;
+    }
+
+    .album-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .album-meta {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .album-meta .count { color: #ff6b35; font-weight: 600; }
+
+    /* Photo grid */
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 4px;
+    }
+
+    .photo-item {
+      aspect-ratio: 1;
+      overflow: hidden;
+      cursor: pointer;
+      background: #111;
+      position: relative;
+    }
+
+    .photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .photo-item:hover img {
+      transform: scale(1.04);
+      opacity: 0.85;
+    }
+
+    .photo-item .photo-num {
+      position: absolute;
+      bottom: 6px;
+      right: 8px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      pointer-events: none;
+    }
+
+    /* Lightbox */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #lightbox.open {
+      display: flex;
+    }
+
+    #lightbox-img {
+      max-width: calc(100vw - 120px);
+      max-height: calc(100vh - 80px);
+      object-fit: contain;
+      display: block;
+      border-radius: 2px;
+      user-select: none;
+    }
+
+    .lb-btn {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.07);
+      border: none;
+      color: #fff;
+      width: 48px;
+      height: 80px;
+      cursor: pointer;
+      font-size: 22px;
+      border-radius: 4px;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+    }
+
+    .lb-btn:hover { background: rgba(255,255,255,0.15); }
+
+    #lb-prev { left: 12px; }
+    #lb-next { right: 12px; }
+
+    #lb-close {
+      position: fixed;
+      top: 14px;
+      right: 18px;
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 28px;
+      cursor: pointer;
+      z-index: 1001;
+      line-height: 1;
+      padding: 4px;
+    }
+
+    #lb-close:hover { color: #fff; }
+
+    #lb-counter {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      color: #666;
+      z-index: 1001;
+      pointer-events: none;
+    }
+
+    #lb-filename {
+      position: fixed;
+      bottom: 44px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #555;
+      z-index: 1001;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #not-found {
+      text-align: center;
+      padding: 80px 24px;
+      color: #555;
+    }
+
+    #not-found h2 { font-size: 22px; margin-bottom: 12px; color: #777; }
+    #not-found a { color: #ff6b35; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="logo" href="index.html">Colorado <span>FGC</span> Archive</a>
+    <nav class="breadcrumb">
+      <span class="sep">/</span>
+      <a href="index.html">Albums</a>
+      <span class="sep">/</span>
+      <span id="breadcrumb-name"></span>
+    </nav>
+  </header>
+
+  <main>
+    <div id="not-found" style="display:none">
+      <h2>Album not found</h2>
+      <p><a href="index.html">← Back to albums</a></p>
+    </div>
+
+    <div id="album-content">
+      <div class="album-header">
+        <h1 class="album-title" id="album-title"></h1>
+        <div class="album-meta"><span class="count" id="photo-count"></span> photos</div>
+      </div>
+      <div class="photos-grid" id="photos-grid"></div>
+    </div>
+  </main>
+
+  <!-- Lightbox -->
+  <div id="lightbox" role="dialog" aria-modal="true">
+    <button id="lb-close" aria-label="Close">&times;</button>
+    <button class="lb-btn" id="lb-prev" aria-label="Previous">&#8249;</button>
+    <img id="lightbox-img" alt="">
+    <button class="lb-btn" id="lb-next" aria-label="Next">&#8250;</button>
+    <div id="lb-filename"></div>
+    <div id="lb-counter"></div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    function formatName(name) {
+      return name
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+        .trim();
+    }
+
+    // Read album param
+    const params = new URLSearchParams(location.search);
+    const albumName = params.get('album');
+    const album = ALBUMS.find(a => a.name === albumName);
+
+    if (!album) {
+      document.getElementById('not-found').style.display = 'block';
+      document.getElementById('album-content').style.display = 'none';
+    } else {
+      const label = formatName(album.name);
+      document.title = label + ' – Colorado FGC Archive';
+      document.getElementById('breadcrumb-name').textContent = label;
+      document.getElementById('album-title').textContent = label;
+      document.getElementById('photo-count').textContent = album.images.length;
+
+      const grid = document.getElementById('photos-grid');
+      album.images.forEach((img, i) => {
+        const item = document.createElement('div');
+        item.className = 'photo-item';
+        item.innerHTML = `
+          <img src="img/${album.name}/${img}" alt="Photo ${i+1}" loading="lazy">
+          <span class="photo-num">${i+1}</span>
+        `;
+        item.addEventListener('click', () => openLightbox(i));
+        grid.appendChild(item);
+      });
+    }
+
+    // Lightbox
+    let currentIdx = 0;
+    const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lightbox-img');
+    const lbCounter = document.getElementById('lb-counter');
+    const lbFilename = document.getElementById('lb-filename');
+
+    function openLightbox(idx) {
+      currentIdx = idx;
+      showImage();
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function showImage() {
+      const img = album.images[currentIdx];
+      lbImg.src = `img/${album.name}/${img}`;
+      lbImg.alt = `Photo ${currentIdx + 1}`;
+      lbCounter.textContent = `${currentIdx + 1} / ${album.images.length}`;
+      lbFilename.textContent = img;
+    }
+
+    function prev() {
+      if (!album) return;
+      currentIdx = (currentIdx - 1 + album.images.length) % album.images.length;
+      showImage();
+    }
+
+    function next() {
+      if (!album) return;
+      currentIdx = (currentIdx + 1) % album.images.length;
+      showImage();
+    }
+
+    document.getElementById('lb-close').addEventListener('click', closeLightbox);
+    document.getElementById('lb-prev').addEventListener('click', prev);
+    document.getElementById('lb-next').addEventListener('click', next);
+
+    lb.addEventListener('click', e => {
+      if (e.target === lb) closeLightbox();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (!lb.classList.contains('open')) return;
+      if (e.key === 'ArrowLeft') prev();
+      else if (e.key === 'ArrowRight') next();
+      else if (e.key === 'Escape') closeLightbox();
+    });
+
+    // Touch swipe
+    let touchStartX = 0;
+    lb.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) dx < 0 ? next() : prev();
+    });
+  </script>
+</body>
+</html>
